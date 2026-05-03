@@ -1,0 +1,40 @@
+// afrirates-api database schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// One row per provider per scrape cycle per corridor+type combination
+// e.g. Wise / USD / NGN / sell / 1610.50
+model Rate {
+  id          String   @id @default(cuid())
+  currency    String   // "USD" | "GBP" | "EUR"
+  country     String   // "NGN" | "GHS" | "KES"
+  countryName String   // "Nigeria" | "Ghana" | "Kenya"
+  type        String   // "buy" | "sell"
+  rate        Float
+  provider    String   // e.g. "Wise", "Remitly", "WorldRemit"
+  fetchedAt   DateTime @default(now())
+
+  @@index([currency, country, type, fetchedAt])
+  @@index([provider, currency, country, type])
+  @@map("rates")
+}
+
+model Webhook {
+  id              String    @id @default(cuid())
+  url             String
+  currency        String    // "USD" | "GBP" | "EUR"
+  country         String    // "NGN" | "GHS" | "KES"
+  type            String    // "buy" | "sell"
+  threshold       Float     @default(0.5) // percent change to trigger
+  createdAt       DateTime  @default(now())
+  lastTriggeredAt DateTime?
+
+  @@map("webhooks")
+}
